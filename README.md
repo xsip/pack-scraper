@@ -9,3 +9,6 @@ webpack scraper and extractor
 # for help
 => npm run cli help
 ![cli help](https://raw.githubusercontent.com/xsip/pack-scraper/master/npmrunclihelp.png)
+
+# Sourcemap Extractor
+ The Sourcemap souercecontent extractor itself is heavy inspired by this source . https://github.com/mutoo/webpack-sourcemap-unpacker
