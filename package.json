@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "cli": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode"
+    "cli": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
+    "cli:2": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode"
   },
   "author": "kerschbaumer stefan",
   "license": "ISC",
