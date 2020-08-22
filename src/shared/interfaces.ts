@@ -2,6 +2,12 @@ export interface UnpackerConfig {
     page?: string;
     includeJsFiles?: boolean;
     fetchMethod?: 'try' | 'parse';
+    useChromium?: boolean;
+    recursiveLinkClick?: boolean;
+    recursiveClickTimeout?: number;
+    recursiveClickSection?: string;
+    fromCache?: boolean;
+    cookies?: any;
     ignoreExisting?: boolean;
     unpackMode?: boolean;
     fetchMode?: boolean;

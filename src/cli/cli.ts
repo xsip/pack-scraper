@@ -1,7 +1,7 @@
-import {UnpackerConfig} from "../shared/interfaces";
-import {Fetcher} from "../services/fetcher";
-import {Utils} from "../shared/utils";
-import {CliHelp} from "./cli-help";
+import {UnpackerConfig} from '../shared/interfaces';
+import {Fetcher} from '../services/fetcher';
+import {Utils} from '../shared/utils';
+import {CliHelp} from './cli-help';
 import {SourceMapExtractor} from '../services/source-map-extractor';
 
 export class PackScraperCli {
@@ -49,20 +49,34 @@ export class PackScraperCli {
                 let data = p.split(/=(.+)/);
                 data[0] = this.fixCommandName(data[0]);
                 config[data[0]] = data[1].split(',');
-            }
-            else {
+            } else {
                 if (p.indexOf('=') !== -1) {
                     let data = p.split(/=(.+)/);
                     data[0] = this.fixCommandName(data[0]);
                     config[data[0]] = data[1];
                 } else {
+                    if (p.indexOf('recursiveClickTimeout') || p.indexOf('recursiveClickSection')) {
+                        config[this.fixCommandName(p)] = false;
+                    }
                     config[this.fixCommandName(p)] = true;
                 }
             }
 
 
         });
-        return config;
+        return this.fixConfig(config);
+    }
+
+    private fixConfig(config: UnpackerConfig) {
+        if (config.fetchMethod && config.useChromium && config.recursiveLinkClick) {
+            if (!config.recursiveClickTimeout) {
+                config.recursiveClickTimeout = 1000;
+            }
+            if (!config.recursiveClickSection) {
+                config.recursiveClickSection = undefined;
+            }
+        }
+        return config
     }
 
     public configIsValid(config: UnpackerConfig): boolean {
@@ -70,22 +84,25 @@ export class PackScraperCli {
             this.cliHelp.logCommands();
             process.exit(0);
         }
-        if (config.fetchMode && !config.page) {
+        if (config.fetchMode && !config.page && !config.fromCache) {
             if (!config.additionalScripts) {
-                console.error(this.utils.cyanText(`Fetchmode requires page OR additionalScripts to be set!`));
+                console.error(this.utils.cyanText(`Fetchmode requires page, fromCache OR additionalScripts to be set!`));
                 return false;
             }
             if (!config.outDir) {
                 console.error(this.utils.cyanText(`Fetchmode using additionalScripts requires outDir to be set!`));
                 return false;
             }
-
         }
+
+
         if (config.unpackMode && (!config.page && !config.outDir)) {
             console.error(this.utils.cyanText(`Unpackmode requires page OR outDir to be set!
             (if outDir is not set, outDir get's selected by transforming page)`));
             return false;
         }
+
+        console.log(config);
         return true;
     }
 }

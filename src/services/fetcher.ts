@@ -1,20 +1,22 @@
-import {FileData, FileDataList, UnpackerConfig} from "../shared/interfaces";
-import {Utils} from "../shared/utils";
-import * as request from "request-promise";
-import * as fs from "fs";
-import {JSDOM} from "jsdom";
+import {FileData, FileDataList, UnpackerConfig} from '../shared/interfaces';
+import {Utils} from '../shared/utils';
+import * as request from 'request-promise';
+import * as fs from 'fs';
+import {JSDOM} from 'jsdom';
+import {ChromiumFetcher} from './chromium.fetcher';
 
 
 export class Fetcher {
 
     private utils: Utils;
+    private chromiumFetcher: ChromiumFetcher;
     private sourceMapsToLoad: FileData[] = [];
 
     private inMemoryJsFiles: FileDataList = {};
 
     constructor(private config: UnpackerConfig) {
         this.utils = new Utils(this.config);
-
+        this.chromiumFetcher = new ChromiumFetcher(this.config);
     }
 
     addAdditionalScriptsToQueue() {
@@ -34,10 +36,7 @@ export class Fetcher {
             console.log(e.src);
             if (e.src.indexOf('.js') !== -1) {
                 if (!this.utils.containsDomain(e)) {
-                    this.sourceMapsToLoad.push({
-                        url: this.utils.replaceLastSlash(this.config.page) + '/' + e.src,
-                        name: e.src
-                    });
+
                 } else {
                     let splitName: string[] = e.src.split('/');
                     this.sourceMapsToLoad.push({url: e.src, name: splitName[splitName.length - 1], isExtern: true});
@@ -48,14 +47,26 @@ export class Fetcher {
         }
     }
 
+    addScriptsFromInMemoryCacheToQueue() {
+        for (let i in this.inMemoryJsFiles) {
+            const e = this.inMemoryJsFiles[i];
+            if (!this.utils.containsDomain({src: e.url} as any)) {
+
+            } else {
+                let splitName: string[] = e.url.split('/');
+                this.sourceMapsToLoad.push({url: e.url, name: splitName[splitName.length - 1], isExtern: true});
+            }
+        }
+    }
+
     private copyFileMessage(f: FileData, dir: string, isSourceMap: boolean) {
         console.log(`copying ${this.utils.cyanText(f.url + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : ''))
-            } to local destination ${this.utils.cyanText(dir + '/' + f.name + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : ''))}`);
+        } to local destination ${this.utils.cyanText(dir + '/' + f.name + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : ''))}`);
     }
 
     private copyFileFailedMessage(f: FileData, dir: string, isSourceMap: boolean) {
         console.log(this.utils.redText(`copying ${f.url + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : '')
-            } to local destination ${dir + '/' + f.name + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : '')} failed`));
+        } to local destination ${dir + '/' + f.name + (isSourceMap && !f.isFromSourceMappingUrl ? '.map' : '')} failed`));
     }
 
     private noSourceMapForFileMessage(f: FileData) {
@@ -124,7 +135,7 @@ export class Fetcher {
     }
 
     extractSourceMappingUrl(data: string): string {
-        const res = data.match(/sourceMappingURL=(.*)/g) || [""];
+        const res = data.match(/sourceMappingURL=(.*)/g) || [''];
         // .map gets appended by getAndSafeFile
         return res[0].replace('sourceMappingURL=', ''); // .replace('.map', '');
     }
@@ -166,7 +177,99 @@ export class Fetcher {
 
     }
 
-    async getFiles() {
+    async getFiles(fromCache = this.config.fromCache) {
+        if (fromCache) {
+            const cache = fs.readFileSync(this.utils.cacheFile, 'utf-8');
+            if (cache) {
+                this.inMemoryJsFiles = JSON.parse(cache);
+            } else {
+                this.inMemoryJsFiles = {}
+            }
+        }
+        let res;
+        if (fromCache) {
+            res = await this.getFilesFromCache();
+        } else if (!fromCache && this.config.useChromium) {
+            res = await this.getFilesChromium(fromCache);
+        } else if (!fromCache && !this.config.useChromium) {
+            res = await this.getFilesStandard();
+        }
+        fs.writeFileSync(this.utils.cacheFile, JSON.stringify(this.inMemoryJsFiles, null, 2), 'utf-8');
+        return res;
+    }
+
+    async getFilesFromCache() {
+        try {
+            if (this.config.page) {
+                const fullIndexHtml: string = await request(this.config.page);
+
+                fs.writeFileSync(this.utils.outputDirectory + '/' + this.config.page.replace(/\//g, '') + '.html', fullIndexHtml, 'utf-8');
+            }
+            this.addScriptsFromInMemoryCacheToQueue();
+
+            this.addAdditionalScriptsToQueue();
+
+            // await jsFilesToDownload.map(async file => {
+            for (let file of this.sourceMapsToLoad) {
+                if (this.config.fetchMethod === 'try' || !this.config.fetchMethod) {
+                    await this.downloadJsFilesIfNeeded(file);
+                    await this.fetchMethodTry(file);
+                } else {
+                    await this.fetchMethodParse(file);
+                }
+
+            }
+            // });
+
+        } catch (e) {
+            console.log('error enccoured!!', e);
+        }
+    }
+
+    async getFilesChromium(fromCache = false) {
+        try {
+            if (this.config.page) {
+                const scripts = await this.chromiumFetcher.getAllJsFiles();
+                scripts.forEach(script => {
+                    const splitName = script.url.split('/');
+                    this.sourceMapsToLoad.push({
+                        url: script.url,
+                        name: splitName[splitName.length - 1]
+                    });
+                    this.inMemoryJsFiles[script.url] = {
+                        name: splitName[splitName.length - 1],
+                        url: script.url,
+                        isExtern: true,
+                        data: script.data
+                    };
+                })
+                const fullIndexHtml: string = await request(this.config.page);
+
+                fs.writeFileSync(this.utils.outputDirectory + '/' + this.config.page.replace(/\//g, '') + '.html', fullIndexHtml, 'utf-8');
+
+                this.addScriptsFromInMemoryCacheToQueue();
+            }
+
+            this.addAdditionalScriptsToQueue();
+
+            // await jsFilesToDownload.map(async file => {
+            for (let file of this.sourceMapsToLoad) {
+                if (this.config.fetchMethod === 'try' || !this.config.fetchMethod) {
+                    await this.downloadJsFilesIfNeeded(file);
+                    await this.fetchMethodTry(file);
+                } else {
+                    await this.fetchMethodParse(file);
+                }
+
+            }
+            // });
+
+        } catch (e) {
+            console.log('error enccoured!!', e);
+        }
+    }
+
+    async getFilesStandard() {
         try {
             if (this.config.page) {
                 const fullIndexHtml: string = await request(this.config.page);

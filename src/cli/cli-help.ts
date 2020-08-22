@@ -8,7 +8,6 @@ const red = (t: string) => '\x1b[31m' + t + '\x1b[0m';
 
 export class CliHelp {
     private commands: CommandList = {};
-
     constructor() {
         this.describeCommands();
         this.logo();
@@ -37,8 +36,16 @@ export class CliHelp {
         this.commands.includeJsFiles = `Also download and save js files`;
         this.commands.page = `The destination page to parse`;
         this.commands.fetchMethod = `Can be 'try' or 'parse'.(default try)\nIf fetchMethod is try, then the script trys to download map files by adding .map to js files name.\nIn parse mode, js files get downloaded first -even when includeJsFiles is unset - to parse them and detect sourcemap file names.`;
+        this.commands.useChromium = `Use chromium instead of deprecated request library`;
+        this.commands.recursiveLinkClick = 'When chromium and set to true it clicks through all links found on the first page';
+        this.commands.recursiveClickTimeout = 'Timeout in ms before each click ( default 1000)';
+        this.commands.recursiveClickSection = 'Query Selector from where to query links ( default document)';
+        this.commands.fromCache = 'Parses sourcemap from cache';
     }
-
+    /*
+    recursiveClickTimeout?: number;
+    recursiveClickSection?: string;
+     */
     logCommands() {
         for (let key in this.commands) {
             console.log(`${red(key + ':\n')}${cyan(this.commands[key])}`);

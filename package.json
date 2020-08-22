@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "cli": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
+    "unpack-cli": "tsc && node dist/cli/cli.js ignore-existing include-js-files unpack-mode",
+    "cache-example": "npm run cli outDir=<pack-scraper-project-folder-name> fromCache=true",
+    "clitest": "tsc && node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
     "cli:2": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
     "cli:3": "node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode additional-scripts=https://cache.willhaben.at/da/advertising.3e124734fd0de4d62b86.js outDir=willhabenAdd"
   },
   "author": "kerschbaumer stefan",
   "license": "ISC",
   "devDependencies": {
+    "@types/puppeteer": "^1.20.2",
     "@types/jsdom": "^12.2.4",
     "@types/node": "^12.7.7",
     "@types/request-promise": "^4.1.44",
@@ -20,6 +24,11 @@
     "fs-extra": "^7.0.0",
     "glob": "^7.1.3",
     "jsdom": "^15.1.1",
-    "request-promise": "^4.2.6"
+    "puppeteer": "^1.13.0",
+    "puppeteer-extra": "^3.1.15",
+    "puppeteer-extra-plugin-adblocker": "^2.11.6",
+    "puppeteer-extra-plugin-stealth": "^2.6.1",
+    "request-promise": "^4.2.6",
+    "winston": "^3.1.0"
   }
 }
