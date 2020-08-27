@@ -1,12 +1,11 @@
-import {UnpackerConfig} from '../shared/interfaces';
-import {Fetcher} from '../services/fetcher';
+import {BaseUnpackerConfig, UnpackerConfig} from '../shared/interfaces';
 import {Utils} from '../shared/utils';
 import {CliHelp} from './cli-help';
-import {SourceMapExtractor} from '../services/source-map-extractor';
+
 
 export class PackScraperCli {
     cliHelp: CliHelp = new CliHelp();
-    utils: Utils = new Utils({});
+    utils: Utils = new Utils({} as any);
 
     constructor() {
     }
@@ -40,31 +39,60 @@ export class PackScraperCli {
         process.exit(0);
     }
 
+    private fixCommandValue(commandKey: string, commandValue: string) {
+        switch (typeof BaseUnpackerConfig[commandKey]) {
+            case 'string': {
+                return commandValue;
+                break;
+            }
+            case 'object': {
+                if (Array.isArray(BaseUnpackerConfig[commandKey])) {
+                    return commandValue.split(',')
+                }
+
+                break;
+            }
+            case 'boolean': {
+                return commandValue === 'false' ? false : true;
+                break;
+            }
+            case 'number': {
+                return parseInt(commandValue, 0);
+                break;
+            }
+        }
+    }
+
     public parseConfig(): UnpackerConfig {
         let config: UnpackerConfig = this.createEmptyConfigObject();
-        process.argv.map(p => {
-            if (p.indexOf('help') !== -1) {
-                this.handleHelpCommand(p);
-            } else if (p.indexOf('additional-scripts') !== -1 || p.indexOf('additionalScripts') !== -1) {
-                let data = p.split(/=(.+)/);
+        process.argv.map(processArg => {
+            if (processArg.indexOf('help') !== -1) {
+                this.handleHelpCommand(processArg);
+            }
+            let data = processArg.split(/=(.+)/);
+            data[0] = this.fixCommandName(data[0]);
+            config[data[0]] = this.fixCommandValue(data[0], data[1] ? data[1] : '');
+            /*else if (processArg.indexOf('additional-scripts') !== -1 || processArg.indexOf('additionalScripts') !== -1) {
+                let data = processArg.split(/=(.+)/);
                 data[0] = this.fixCommandName(data[0]);
                 config[data[0]] = data[1].split(',');
             } else {
-                if (p.indexOf('=') !== -1) {
-                    let data = p.split(/=(.+)/);
+                if (processArg.indexOf('=') !== -1) {
+                    let data = processArg.split(/=(.+)/);
                     data[0] = this.fixCommandName(data[0]);
                     config[data[0]] = data[1];
                 } else {
-                    if (p.indexOf('recursiveClickTimeout') || p.indexOf('recursiveClickSection')) {
-                        config[this.fixCommandName(p)] = false;
+                    if (processArg.indexOf('recursiveClickTimeout') || processArg.indexOf('recursiveClickSection')) {
+                        config[this.fixCommandName(processArg)] = false;
                     }
-                    config[this.fixCommandName(p)] = true;
+                    config[this.fixCommandName(processArg)] = true;
                 }
-            }
+            }*/
 
 
         });
-        return this.fixConfig(config);
+        return config;
+        // return this.fixConfig(config);
     }
 
     private fixConfig(config: UnpackerConfig) {
@@ -106,28 +134,3 @@ export class PackScraperCli {
         return true;
     }
 }
-
-const run = async () => {
-
-    const cli: PackScraperCli = new PackScraperCli();
-    const config: UnpackerConfig = cli.parseConfig();
-
-    if (cli.configIsValid(config)) {
-        console.log('config is valid');
-        if (config.fetchMode) {
-            console.log('fetchmode on');
-            const fetcher: Fetcher = new Fetcher(config);
-            await fetcher.getFiles();
-        }
-
-        if (config.unpackMode) {
-            const extractor: SourceMapExtractor =
-                new SourceMapExtractor(config);
-            await extractor.unpack();
-        }
-    }
-};
-
-run().then(() => {
-    // console.log('DONE');
-});

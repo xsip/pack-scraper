@@ -4,12 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "cli": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
-    "unpack-cli": "tsc && node dist/cli/cli.js ignore-existing include-js-files unpack-mode",
-    "cache-example": "npm run cli outDir=<pack-scraper-project-folder-name> fromCache=true",
-    "clitest": "tsc && node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
-    "cli:2": "tsc && node dist/cli/cli.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
-    "cli:3": "node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode additional-scripts=https://cache.willhaben.at/da/advertising.3e124734fd0de4d62b86.js outDir=willhabenAdd"
+    "cli": "tsc && node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
+    "cache-example": "npm run cli outDir=<pack-scraper-project-folder-name> fromCache=true"
   },
   "author": "kerschbaumer stefan",
   "license": "ISC",

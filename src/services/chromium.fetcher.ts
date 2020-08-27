@@ -23,7 +23,7 @@ export class ChromiumFetcher {
     collectedFiles: string[] = [];
     visited: string[] = [];
     pupeteerArgs: any;
-    private browser: Browser;
+    public browser: Browser;
     launched: boolean;
     agents: string[] = [
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -67,7 +67,7 @@ export class ChromiumFetcher {
         const page: Page = await this.browser.newPage();
         await page.setRequestInterception(true);
         if (this.config.cookies) {
-            page.setCookie(...this.config.cookies);
+            page.setCookie(...(this.config.cookies as any));
         }
 
         // await page.setUserAgent(this.agents[Math.floor(Math.random() * this.agents.length)]);
@@ -83,13 +83,22 @@ export class ChromiumFetcher {
 
     }
 
+    end = async () => {
+        if (this.launched) {
+            const res = await this.browser.close();
+            this.launched = false;
+        }
+    }
     launch = async () => {
 
-        this.browser = await puppeteer.launch(this.pupeteerArgs);
+        this.browser = await puppeteer.launch({
+            ...this.pupeteerArgs,
+            userDataDir: this.config.chromiumDir ? this.config.chromiumDir : null
+        });
         this.launched = true;
 
         this.browser.on('disconnected', (e) => {
-            this.logger.info(`pupeteer crashed.. restarting!`);
+            this.logger.info(`browser stopped..`);
             // this.launch();
         });
 
@@ -189,7 +198,6 @@ export class ChromiumFetcher {
         await page.close();
         if (collectForAllSubLinks) {
             console.log('collecting for sublinks');
-            process.exit(1);
             for (let link of allLinks) {
                 if (!this.visitedPreRoute(link, this.config.page)) {
                     this.visited.push(link);

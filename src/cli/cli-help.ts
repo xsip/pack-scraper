@@ -1,4 +1,4 @@
-import {UnpackerConfig} from "../shared/interfaces";
+import {BaseUnpackerConfig, UnpackerConfig} from '../shared/interfaces';
 
 type CommandList = {
     [K in keyof UnpackerConfig]: string;
@@ -7,7 +7,7 @@ const cyan = (t: string) => '\x1b[36m' + t + '\x1b[0m';
 const red = (t: string) => '\x1b[31m' + t + '\x1b[0m';
 
 export class CliHelp {
-    private commands: CommandList = {};
+    private commands: CommandList = {} as CommandList;
     constructor() {
         this.describeCommands();
         this.logo();
@@ -41,6 +41,8 @@ export class CliHelp {
         this.commands.recursiveClickTimeout = 'Timeout in ms before each click ( default 1000)';
         this.commands.recursiveClickSection = 'Query Selector from where to query links ( default document)';
         this.commands.fromCache = 'Parses sourcemap from cache';
+        this.commands.chromiumDir = 'chromium profile dir path';
+        this.commands.preSetup = 'launches chromium to pre set up';
     }
     /*
     recursiveClickTimeout?: number;
@@ -48,13 +50,24 @@ export class CliHelp {
      */
     logCommands() {
         for (let key in this.commands) {
-            console.log(`${red(key + ':\n')}${cyan(this.commands[key])}`);
+            console.log(`${red(key + ':\n')}${cyan(this.commands[key])} (${this.getTypeStringFromUnpackerConfig(key)})`);
         }
     }
 
+    getTypeStringFromUnpackerConfig(key: string) {
+        const obj = (BaseUnpackerConfig as any)[key];
+        if(typeof obj === 'object') {
+            if (Array.isArray(obj)) {
+                return `${typeof  obj[0]}[]`;
+            }
+            return typeof obj;
+        }
+        return typeof obj;
+
+    }
     logCommand(key: string) {
         if (this.commands[key]) {
-            console.log(`${red(key + ':\n')}${cyan(this.commands[key])}`);
+            console.log(`${red(key + ':\n')}${cyan(this.commands[key])} (${this.getTypeStringFromUnpackerConfig(key)})`);
         } else {
             console.log(`${red(key + ':\n')}${cyan('<unknown command - no info provided>')}`);
         }

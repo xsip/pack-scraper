@@ -1,18 +1,44 @@
-import {UnpackerConfig} from "./shared/interfaces";
-import {Fetcher} from "./services/fetcher";
-import {SourceMapExtractor} from "./services/source-map-extractor";
-import {PackScraperCli} from "./cli/cli";
-import {ChromiumFetcher} from './services/chromium.fetcher';
-import * as fs from 'fs';
-/*const run = async () => {
+import {PackScraperCli} from './cli/cli';
+import {UnpackerConfig} from './shared/interfaces';
+import {SourceMapExtractor} from './services/source-map-extractor';
+import {Fetcher} from './services/fetcher';
+
+const readline = require('readline');
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+const run = async () => {
 
     const cli: PackScraperCli = new PackScraperCli();
     const config: UnpackerConfig = cli.parseConfig();
+    const fetcher: Fetcher = new Fetcher(config);
+    console.log(config);
+
+    if (config.preSetup) {
+        await fetcher.chromiumFetcher.launch();
+        /*await new Promise(resolve => {
+            rl.question('Press any key to continue...', (answer) => {
+                rl.close();
+                resolve(true);
+            });
+        });*/
+        const pages = await fetcher.chromiumFetcher.browser.pages();
+        await new Promise(resolve => {
+            pages[0].on('close', () => {
+                resolve(true);
+            })
+        });
+
+    }
 
     if (cli.configIsValid(config)) {
-
+        console.log('config is valid');
         if (config.fetchMode) {
-            const fetcher: Fetcher = new Fetcher(config);
+            console.log('fetchmode on');
+
             await fetcher.getFiles();
         }
 
@@ -21,16 +47,12 @@ import * as fs from 'fs';
                 new SourceMapExtractor(config);
             await extractor.unpack();
         }
+        await fetcher.chromiumFetcher.end();
+    } else {
+        await fetcher.chromiumFetcher.end();
     }
-};*/
+};
 
-const test = async () => {
-    const cli: PackScraperCli = new PackScraperCli();
-    const config: UnpackerConfig = cli.parseConfig();
-    const chromium = new ChromiumFetcher(config);
-    const res = await chromium.getAllJsFiles();
-    fs.writeFileSync('res.json', JSON.stringify(res, null, 2), 'utf-8');
-}
-test().then(() => {
+run().then(() => {
     // console.log('DONE');
 });

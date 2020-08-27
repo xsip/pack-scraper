@@ -9,7 +9,7 @@ import {ChromiumFetcher} from './chromium.fetcher';
 export class Fetcher {
 
     private utils: Utils;
-    private chromiumFetcher: ChromiumFetcher;
+    public chromiumFetcher: ChromiumFetcher;
     private sourceMapsToLoad: FileData[] = [];
 
     private inMemoryJsFiles: FileDataList = {};
@@ -157,7 +157,7 @@ export class Fetcher {
         if (this.inMemoryJsFiles[file.url].data && this.inMemoryJsFiles[file.url].data.indexOf('sourceMappingURL') !== -1) {
             let extracted: string = this.extractSourceMappingUrl(this.inMemoryJsFiles[file.url].data);
             if (extracted !== '') {
-                console.log(extracted);
+                // console.log(extracted);
                 await this.downloadJsFilesIfNeeded(file);
 
                 await this.fetchMethodTry(

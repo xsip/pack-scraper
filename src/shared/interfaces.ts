@@ -1,19 +1,3 @@
-export interface UnpackerConfig {
-    page?: string;
-    includeJsFiles?: boolean;
-    fetchMethod?: 'try' | 'parse';
-    useChromium?: boolean;
-    recursiveLinkClick?: boolean;
-    recursiveClickTimeout?: number;
-    recursiveClickSection?: string;
-    fromCache?: boolean;
-    cookies?: any;
-    ignoreExisting?: boolean;
-    unpackMode?: boolean;
-    fetchMode?: boolean;
-    outDir?: string;
-    additionalScripts?: string[];
-}
 
 export interface FileData {
     url: string;
@@ -28,7 +12,7 @@ export interface FileDataList {
 }
 
 export interface SourceMap {
-    sources?:  string[];
+    sources?: string[];
     sourcesContent?: string[]
 }
 
@@ -37,3 +21,25 @@ export interface FileAndExt {
     ext: string;
     folder?: string;
 }
+
+
+export const BaseUnpackerConfig = {
+    page: String(),
+    includeJsFiles: Boolean(),
+    fetchMethod: String(),
+    useChromium: Boolean(),
+    recursiveLinkClick: Boolean(),
+    recursiveClickTimeout: 0,
+    recursiveClickSection: String(),
+    fromCache: Boolean(),
+    cookies: [String()],
+    ignoreExisting: Boolean(),
+    unpackMode: Boolean(),
+    fetchMode: Boolean(),
+    outDir: String(),
+    additionalScripts: [String()],
+    chromiumDir: String(),
+    preSetup: Boolean(),
+}
+type UnpackerConfig = typeof BaseUnpackerConfig;
+export {UnpackerConfig};
