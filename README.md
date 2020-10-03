@@ -1,6 +1,6 @@
 
 # pack-scraper
-webpack scraper and extractor
+webpack sourcemap scraper and extractor
 # example ussage
  "npm run cli outDir=example page=http://www.example.com  additionalScripts=http://www.example.com/1.js,http://www.example.com/2.js" .   
  Additional scripts can be i.e lazy loaded js modules in angular routes.  
