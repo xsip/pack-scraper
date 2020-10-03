@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "cli": "tsc && node dist/index.js fetch-method=parse fetch-mode ignore-existing include-js-files unpack-mode",
+    "cli:unpack": "tsc && node dist/index.js  unpack-mode",
     "cache-example": "npm run cli outDir=<pack-scraper-project-folder-name> fromCache=true"
   },
   "author": "kerschbaumer stefan",

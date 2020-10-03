@@ -10,6 +10,7 @@ export class Utils {
     cacheDirectory: string = '';
     cacheFile: string = '';
     sourcemapsDirectory: string = '';
+    logDirectory: string = '';
 
     public evalModule(source: any) {
         return eval(`
@@ -92,6 +93,7 @@ export class Utils {
         this.sourcemapsDirectory = `${this.workDataDirectory}/maps`;
         this.appDirectory = `${this.workDataDirectory}/unpacked`;
         this.cacheDirectory = `${this.workDataDirectory}/cache`;
+        this.logDirectory = `${this.workDataDirectory}/logs`;
         this.cacheFile = `${this.cacheDirectory}/cache.json`;
         this.createDirectoryStructure();
     }
@@ -111,6 +113,7 @@ export class Utils {
         this.createDirIfNotExisting(this.sourcemapsDirectory);
         this.createDirIfNotExisting(this.appDirectory);
         this.createDirIfNotExisting(this.cacheDirectory);
+        this.createDirIfNotExisting(this.logDirectory);
 
     }
 

@@ -1,7 +1,7 @@
 import {FileData, FileDataList, UnpackerConfig} from '../shared/interfaces';
 import {Utils} from '../shared/utils';
 import {Browser, Page, Headers, Request} from 'puppeteer';
-import puppeteer from 'puppeteer-extra';
+const puppeteer = require('puppeteer-extra');
 
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 const AdBlockerPlugin = require('puppeteer-extra-plugin-adblocker');

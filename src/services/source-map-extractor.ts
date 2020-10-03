@@ -3,11 +3,13 @@ import {Utils} from "../shared/utils";
 import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as glob from 'glob';
+import * as fs from 'fs';
 
 export class SourceMapExtractor {
     private utils: Utils;
     private sourceMapQuery: string;
     private prefix: string = 'webpack:///';
+    private unExtractableFilesLog: string;
 
     constructor(private config: UnpackerConfig) {
         this.utils = new Utils(this.config);
@@ -49,7 +51,7 @@ export class SourceMapExtractor {
 
     }
 
-    private mapFileContent(fileData: FileAndExt, content: string): string| Buffer {
+    private mapFileContent(fileData: FileAndExt, content: string): string | Buffer {
 
         let source: string | Buffer = content;
 
@@ -79,6 +81,7 @@ export class SourceMapExtractor {
     }
 
     public async unpack() {
+        this.unExtractableFilesLog = '';
         let sourceMapFilePaths = glob.sync(this.sourceMapQuery);
 
         if (!sourceMapFilePaths.length) {
@@ -92,28 +95,38 @@ export class SourceMapExtractor {
 
                 const mapSource: SourceMap = JSON.parse(fse.readFileSync(path.resolve(sourceMapFilePath)));
                 console.info(this.utils.cyanText(`extracting files from ${this.utils.redText(sourceMapFilePath)}`));
-
+                let lastContent: any;
                 await this.forEachSourcemapFile(mapSource, async (fileName: string, fileContent: string) => {
 
-                    const outputFileData = this.getOutputFilePathAndExtension(fileName);
+                    try {
+                        const outputFileData = this.getOutputFilePathAndExtension(fileName);
 
-                    if (outputFileData.file === '') {
-                        console.log(`${this.utils.cyanText('ignoring file')} ${this.utils.redText(fileName)}`);
-                        return;
+                        if (outputFileData.file === '') {
+                            console.log(`${this.utils.cyanText('ignoring file')} ${this.utils.redText(fileName)}`);
+                            return;
+                        }
+
+                        console.info(this.utils.cyanText(`creating file ${this.utils.redText(outputFileData.file)}`));
+
+                        fileContent = this.mapFileContent(outputFileData, fileContent) as any;
+                        lastContent = fileContent;
+                        fse.ensureDirSync(outputFileData.folder);
+                        fse.writeFileSync(outputFileData.file, fileContent);
+                    } catch (e) {
+                        this.unExtractableFilesLog += `Couldn't unpack ${this.getOutputFilePathAndExtension(fileName).file}\n`;
+                        this.unExtractableFilesLog += `File Content: ${lastContent}\n`;
+                        console.info(this.utils.cyanText(`Couldn't unpack ${this.utils.redText(this.getOutputFilePathAndExtension(fileName).file)}`));
+                        await new Promise(r => setTimeout(() => r(true), 5000));
                     }
-
-                    console.info(this.utils.cyanText(`creating file ${this.utils.redText(outputFileData.file)}`));
-
-                    fileContent = this.mapFileContent(outputFileData, fileContent) as any;
-                    fse.ensureDirSync(outputFileData.folder);
-                    fse.writeFileSync(outputFileData.file, fileContent);
-
                 })
 
             } catch (e) {
+                console.log(e);
                 console.info(this.utils.cyanText(`invalid sourcemap found: ${this.utils.redText(sourceMapFilePath)}`));
             }
-
+            console.log('writing file logs..');
+            fs.writeFileSync(this.utils.logDirectory + '/unExtractableFiles.log', this.unExtractableFilesLog, 'utf-8');
+            this.unExtractableFilesLog = '';
             /*
 
             const consumer = await new SourceMapConsumer(mapSource.toString());
